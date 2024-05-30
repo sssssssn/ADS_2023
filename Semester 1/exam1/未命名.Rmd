@@ -1,0 +1,46 @@
+---
+title: '2075'
+author: '2075'
+date: "2023-12-21"
+output: pdf_document
+---
+
+## 1. Stroop test
+
+Import the data and plot them in a useful way:
+```{r}
+#import the data
+data1<-read.csv('/Users/shennuo/ADS_2023/stroop_test.csv') 
+morning_data <- subset(data1, Time == "Morning")
+afternoon_data <- subset(data1, Time == "Afternoon")
+
+#plot
+plot(morning_data$Score, type = "l", col = "blue",
+     main = "Line Plot of Values by Time of Day", xlab = "Index", ylab = "Value")
+lines(afternoon_data$Score, col = "red")
+points(morning_data$Score, col = "blue", pch = 16)
+points(afternoon_data$Score, col = "red", pch = 16)
+legend("topright", legend = unique(data1$Time), col = c("blue", "red"), lty = 1)
+
+```
+
+Is there a difference in performance on the Stroop task between the morning and afternoon group?
+```{r}
+stroop_test<-t.test(data1$Time == 'Morning', data1$Time == 'Afternoon')
+print(stroop_test)
+
+```
+P-value>0.05
+No difference
+
+##2. Marathon finishing times
+```{r}
+#import the data
+data2<-read.csv('/Users/shennuo/ADS_2023/Chicago2013_random_finishers.csv') 
+
+#plot
+plot(data2$Age, data2$Time, 
+     col = ifelse(data2$Gender == "M", "blue", "pink"),
+     pch = 16, xlab = "Age", ylab = "Finishing Time",
+     main = "Finishing Time vs. Age by Gender")
+```

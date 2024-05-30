@@ -1,0 +1,62 @@
+---
+title: 'ADS2 Practical 12: R Markdown'
+author: "Shen Nuo"
+date: "2023-12-07"
+output: pdf_document
+---
+
+## R Markdown
+
+**Text editing in R markdown**
+
+I am the *best* student
+
+- Prepare tutorial
+- Go to class
+- Revise lecture
+- Finish ICA report
+
+1. Eat breakfast
+2. Eat lunch
+4. Eat dinner
+2. Sleep
+
+**Including code in R Markdown**
+
+```{r}
+setwd('/Users/shennuo/ADS_2023/Practical 5')
+
+dragons_data<-read.csv("dragons.csv")
+
+hist(dragons_data$wingspan)
+
+```
+
+**Tables**
+
+```{r}
+library(knitr) 
+kable(head(dragons_data, 5))
+
+#plot the summary statistics
+kable(summary(dragons_data)) 
+
+#datasets with more than one variable
+setwd('/Users/shennuo/ADS_2023/Practical 5')
+
+mice <- read.csv("mouse_report.csv") 
+
+kable(mice[1:6,c(2,4,5)])
+kable(summary(mice))
+
+
+```
+
+**Images**
+
+```{r}
+out.width='100%'
+fig.align='center'
+fig.caption='The description of the figure.'
+include_graphics(path = '/Users/shennuo/ADS_2023/Practical 5/Bridge.png')
+```

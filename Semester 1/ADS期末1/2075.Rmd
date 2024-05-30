@@ -1,0 +1,173 @@
+---
+title: '2075'
+author: '2075'
+date: "2024-01-10"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+setwd("/Users/shennuo/Desktop")
+```
+
+# 1. Benefits of swimming for long-distance runners 
+
+## a. What would be a suitable statistical test for these data and why? Note you may need to tidy these data before deciding on which test to use. 
+Import and tidy the data, choose the suitable statistical test.
+```{r}
+#import the data
+swimming <- read.csv("swimming.csv")
+head(swimming)
+#separate the data
+new_swimming <- separate(data = swimming, 
+        col = "names.before_minutes.before_seconds.after_minutes.after_seconds",
+        into = c("names", "before_m", "before_s", "after_m", "after_s"), sep = "\t" )
+head(new_swimming)
+#check the variable type
+summary(new_swimming)
+#change the type of variable
+add_swim <- new_swimming %>%
+  mutate(before_m = as.numeric(before_m), before_s = as.numeric(before_s),
+         after_m = as.numeric(after_m), after_s = as.numeric(after_s))
+#add the minutes and seconds
+add_swim$before = add_swim$before_m*60 + add_swim$before_s
+add_swim$after = add_swim$after_m*60 + add_swim$after_s
+head(add_swim)
+```
+Before choose the suitable test, check if normality
+
+### judge by eyes
+```{r}
+ggplot(data = add_swim) +
+  geom_line(aes(x=before, col='before'), stat='density') + 
+  geom_line(aes(x=after,col='after'), stat='density') + theme_classic()
+```
+The data seems approximately normally distributed
+### Use Shapiro test
+```{r}
+shapiro.test(add_swim$before)
+shapiro.test(add_swim$after)
+```
+P-value is lager than 0.05.
+Therefore, we could not claim that the data distribution is NOT normal with 5% significance.
+So, we choose t-test.
+
+## b. What are your null and alternative hypotheses?
+HA: Half-marathon time is improved after swimming than before swimming 
+H0: Half-marathon time is not improved after swimming than before swimming 
+
+## c. Is there a statistically significant improvement on runners’ times after swimming?
+Therefore, we should perform paired t-test:
+```{r}
+# Are the variance same or different?
+var.test(add_swim$before, add_swim$after)#p-value<0.05, not equal
+# t-test
+t.test(add_swim$before, add_swim$after,
+paired = T, 
+var.equal=F)
+```
+\newpage
+
+# 2. Number of emergency room admissions
+
+## a. Import the dataset and plot the data in a useful way.
+```{r}
+#import the data
+hospital <- read.csv("hospital_admissions.csv")
+head(hospital)
+
+#plot the data
+g1 <- ggplot(data = hospital, 
+  aes(x = weekday, y = patients_per_hour, col = weekday)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(width = 0.1) +
+  theme_classic()
+print(g1)
+```
+
+## b. Is there a difference in patient admission rates between Mondays and Sundays?
+H0: Patient admission rates in monday is smaller than Sunday.
+HA: Patient admission rates in monday is larger than Sunday.
+
+First, check if normality:
+```{r}
+#judge by eyes
+hist(hospital[hospital$weekday == "Monday","patients_per_hour"])
+hist(hospital[hospital$weekday == "Sunday","patients_per_hour"])
+#seems not normal
+
+# Use Shapiro test
+shapiro.test(hospital[hospital$weekday == "Monday","patients_per_hour"])
+shapiro.test(hospital[hospital$weekday == "Sunday","patients_per_hour"])
+#p-value < 0.05, not normal
+```
+Therefore, we use  non-parametric test: wilcox.test
+```{r}
+wilcox.test(hospital[hospital$weekday == "Monday","patients_per_hour"],
+            hospital[hospital$weekday == "Sunday","patients_per_hour"], 
+            alternative="greater")
+```
+Conclusion: p-value < 0.05, patient admission rates in monday is larger than Sunday.
+
+## c. Based on your findings, what advice would you give Dr. Horsey?
+Arrange more staff on weekdays
+\newpage
+
+# 3. Spinal cord injury and novel biomaterials
+
+## a. Import, arrange the data (merge both pieces of data and make the data possible to analyse), and make it suitable for analysis, e.g. the values. You should perform all the manipulations in R and provide the code.
+Import the data:
+```{r}
+before <- read.csv("SCI_before.csv")
+after <- read.csv("SCI_after.csv")
+head(before)
+head(after)
+```
+Merge the data:
+```{r}
+#Sort the data in descending order
+new_before <- arrange(before, desc(patient_ID))
+new_after <- arrange(after, desc(patient_ID))
+#Merge the data
+merge <- merge(new_before, new_after)
+head(merge)
+#remove the duplicated rows
+no.merge = merge[!duplicated(merge),]
+head(no.merge)
+```
+make it suitable for analysis:
+```{r}
+no.merge$AIS_before[no.merge$AIS_before == "A"] <- 5
+no.merge$AIS_before[no.merge$AIS_before == "B"] <- 4
+no.merge$AIS_before[no.merge$AIS_before == "C"] <- 3
+
+no.merge$AIS_after[no.merge$AIS_after == "A"] <- 5
+no.merge$AIS_after[no.merge$AIS_after == "B"] <- 4
+no.merge$AIS_after[no.merge$AIS_after == "C"] <- 3
+
+merge11 <- no.merge %>%
+  mutate(AIS_before = as.numeric(AIS_before), 
+         AIS_after = as.numeric(AIS_after))
+head(merge11)
+```
+
+## b. Check your data carefully. Identify features of the data and discuss your conclusions. Make illustrative plots.
+```{r}
+merge22 <- gather(data = merge11, key ="Group", value = "Cases",
+2:ncol(merge11)) 
+
+g3 <- ggplot(data = merge22, aes(x = patient_ID, y = Cases, group = Group )) + geom_bar(position = "dodge")
+
+print(g3)
+```
+
+## c. Formulate the correct statistical hypothesis to compare the groups, choose the appropriate statistical test, and check assumptions for this test. Explain your choice briefly. Then, perform this test and identify whether the difference between the experimental groups is statistically significant.
+HA: There is differences after a novel biomaterial, it may help to regenerate injured nervous tissue after SC
+H0: There is no differences after a novel biomaterial, it may not help to regenerate injured nervous tissue after SC
+```{r}
+
+```

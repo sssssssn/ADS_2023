@@ -1,0 +1,80 @@
+---
+title: "ADS_cheatsheet"
+author: 'sn'
+date: "2024-01-09"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(ggplot2)
+mouse_report <- read.csv("mouse_report.csv")
+stroop <- read.csv("stroop_test.csv")
+```
+
+# boxplot
+
+```{r}
+geno <- ggplot(data = mouse_report, aes(x = genotype, y = weight, col = genotype)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(width = 0.1) +
+  theme_classic()
+age <- ggplot(data = mouse_report, aes(x = patient, y = age, col = genotype)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(width = 0.1) +
+  theme_classic()
+print(geno)
+print(age)
+
+```
+
+# density plot
+
+```{r}
+ggplot(data=mouse_report) +
+#geom_line(aes(x=before, col='before'), stat='density') + 
+  geom_line(aes(x=age,col='age'), stat='density') + theme_classic()
+```
+
+# point plot
+
+```{r}
+g <- ggplot(data = mouse_report,
+mapping = aes(x = age, y = weight, group = genotype)) + 
+  geom_point(stat = "identity", aes(colour = genotype)) 
+print(g)
+
+```
+
+# barplot
+```{r}
+Chicago <- read.csv("Chicago2013.csv")
+p <- ggplot(data = Chicago, mapping = aes(x = Country))
+p + geom_bar(stat = "count")
+```
+
+# T-test
+How to do t-test
+> 1. HO: HA:
+> 2. choose the suitable test, check if normality
+
+```{r}
+hist(stroop[stroop$Time=="Morning","Score"],main="Morning", xlab="Score")
+```
+
+```{r}
+shapiro.test(stroop[stroop$Time=="Morning", "Score"])
+```
+> 3. perform t-test
+Therefore, we should perform...
+```{r}
+t.test(stroop[stroop$Time == "Morning","Score"], 
+stroop[stroop$Time == "Afternoon", "Score"], 
+paired = F, 
+var.equal=F)
+```
+4. perform wilcox.test
+```{r}
+wilcox.test(Score~Time,stroop, alternative="two.sided")
+```
