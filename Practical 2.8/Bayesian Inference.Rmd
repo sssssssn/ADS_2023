@@ -1,0 +1,113 @@
+---
+title: "Bayesian Inference"
+author: "sn"
+date: "2024-04-10"
+output: pdf_document
+---
+
+```{r, include=FALSE}
+library(ggplot2)
+```
+
+## Is the Guinness factory adding enough barley?
+
+## The Guinness beer factory requires 50 g of barley per pint of beer. They examined 50 pints and found an average barley content of 46 g per pint.
+
+### 1. Use my priors as described below to determine the posterior probability that enough barley is being added to each pint.
+
+P(H1) = P(enough barley) = 0.5 
+P(H2) = P(not enough barley) = 0.5 
+P(DATA|H1) = P(mean barley content 46g|enough barley) = 0.7
+P(DATA|H2) = P(mean barley content 46g|not enough barley) = 0.4
+What is the Bayes Factor for these two hypotheses?
+Bayes Factor = P(D|H1)/P(D|H0) =0.7/ 0.4 = 1.75
+
+```{r}
+PH1 <- 0.5 
+PH0 <- 0.5 
+P_DH1 <- 0.7
+P_DH0 <- 0.4
+P_data <- P_DH1*PH1 + P_DH0*PH0
+posterior <- (PH1*P_DH1)/P_data
+print(posterior)
+```
+
+### 2. Lets explore the probability of seeing the data given each of the two hypotheses. The numbers given here are estimates based on experience. To see how they influence the Bayes factor, calculate the Bayes Factor for each combination of P(DATA|H1)and P(DATA|H2) from 0 to 1 in steps of 0.1 Please plot these on a graph where these two probabilities are the x and y axes.
+
+```{r}
+PDH1 <- seq(0, 1, by = 0.1)
+PDH2 <- seq(0, 1, by = 0.1)
+factor <- c()
+x <- c()
+y <- c()
+for(i in 1:length(PDH1)){
+  
+  for(j in 1:length(PDH2)){
+    calculate <- PDH1[i]/PDH2[j]
+    factor <- c(factor, calculate)
+    x <- c(x,PDH1[i])
+    y <- c(y,PDH2[j])
+  }
+}
+plot <- data.frame(cbind(x,y,factor))
+colnames(plot) <- c("PDH1", "PDH2","bayesfactor")
+
+ggplot(plot, aes(x = PDH1, y = PDH2, fill = bayesfactor)) +
+  geom_tile() +
+  scale_fill_gradient(low = "blue", high = "red", limits = c(0,10), name = "Bayes Factor") +
+  labs(title = "Bayes Factor for different combinations of P(DATA|H1) and P(DATA|H2)",
+       x = "P(DATA|H1)", y = "P(DATA|H2)")
+
+
+```
+
+### 3. Now, I think that my staff are stealing barley to make their own moonshine Guiness at home. I update my first prior to P(A) = P(enough barley) = 0.2. How does this affect the Bayes Factor? How does it affect the posteriors?
+
+```{r}
+newPH1 <- 0.2
+newPH0 <- 0.8 
+newPDH1 <- 0.7
+newPDH2 <- 0.4
+newP_data <- newPDH1*newPH1 + newPDH2*newPH0
+print(newfactor <- newPDH1/newPDH2) # no change in Bayes Factor 
+print(newposterior <- (newPH1*newPDH1)/newP_data) # smaller probabilities
+
+```
+
+## A dice game
+
+## You play a dice-based game with a friend online, using six-sided dice. In this game, rolling a six is especially lucky and wins you many points. Since you are playing via video link, your friend uses their own die. You can see that it is six-sided, but you cannot see the numbers clearly. Over the course of the game, your friend rolls the die 20 times, and 7 out of those 20 rolls are sixes.
+
+### Do you think your friend is playing fair? How many sixes do you believe their die has? 1 (like a normal die)? Or more (the die is unfair)?
+
+```{r}
+PA <- 0.5 # fair
+P0 <- 0.5 # unfair
+PDHA <- dbinom(7, 20, 1/6)
+PDH0 <- c()
+pposterior1 <- c()
+pposterior2 <- c()
+for (i in 2:5){
+  PDH0 <- c(PDH0,dbinom(7, 20, i*1/6))
+}
+
+
+for (j in 1:length(PDH0)){
+  pposterior1 <- c(pposterior1, PA*PDHA / (PA*PDHA + P0*PDH0[j]))
+  pposterior2 <- c(pposterior2, P0*PDH0[j] / (PA*PDHA + P0*PDH0[j]))
+}
+
+print(pposterior1)
+print(pposterior2)
+# unfair
+
+```
+
+### How? Before you start coding, think about this for a moment. The main idea is you have 6 possible hypotheses, one for each number of sixes. Is it really 6 though? Also, how do you compare these hypothesis? Do you have to compare every hypothesis with every other?
+
+```{r}
+
+
+
+
+```
