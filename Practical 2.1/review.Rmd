@@ -1,0 +1,63 @@
+---
+title: 'Comparing multiple means'
+author: "sn"
+date: "2024-05-20"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+library(ggplot2)
+trial <- read.csv('/Users/shennuo/Downloads/drug_trial.csv')
+```
+
+# Practical
+
+## 1.Looking at the dataset
+
+```{r}
+ggplot(data = trial, aes(x = treatment, y = pain, color = treatment)) +
+  geom_boxplot() +
+  scale_fill_manual(values = c('red', 'green', 'blue'))
+```
+
+## 2.H0 and HA
+
+## 3.Getting a sense of variability
+
+```{r}
+
+```
+
+## 4.Get a large number of sample pairs
+
+```{r}
+same <- c()
+different <- c()
+for (i in 1:1000){
+  # choose 2 (different) rows from the total number of rows
+  sample <- trial[sample(1:nrow(trial), 2), ]
+
+  # For the two points in your sample, read out the pain indices
+  # and determine their absolute difference
+  pain_indices <- sample$pain
+  differences <- abs(pain_indices[1]-pain_indices[2])
+  
+  # For the two points in your sample, decide whether they belong
+  # to the same or to different treatment groups
+  group <- sample$treatment
+  if (group[1] == group[2]){
+    same <- c(same, differences)
+  }else{
+   different <- c(different, differences)
+  }
+}
+```
+## 5.Plot and Test
+
+```{r}
+boxplot(same,different, col = c('lightblue', 'orange'))
+print(mean(different) - mean(same))
+
+# Run a test to find out
+wilcox.test(x = same, y = different, alternative = 'two.sided', paired = FALSE)
+```

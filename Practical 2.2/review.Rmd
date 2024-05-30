@@ -1,0 +1,94 @@
+---
+title: "ANOVA"
+author: "sn"
+date: "2024-05-20"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+library(ggplot2)
+trial <- read.csv('/Users/shennuo/Downloads/drug_trial.csv')
+mouse <- read.csv('/Users/shennuo/Downloads/mouse_experiment(1).csv')
+```
+
+## 1. Null Hypothesis: There is no difference between any of the groups.
+
+## 2. F = between-group variability/within-group variability
+
+## 3. Types of ANOVA:
+
+### 1-way ANOVA: 1 factor (e.g. effect of 3 doses of a drug on heart rate)
+
+### 2-way ANOVA: 2 factors (e.g. effect of age and sex on salary)
+
+### 3-way ANOVA: 3 factors (e.g. effect of age, sex and education on salary)
+
+## 4. Assumptions for ANOVA:
+
+### i.Independent random sampling
+
+### ii.Normality of residuals (distances from group mean)
+
+#### model <- aov(grade ~ attendance * previous_grades, data = class)
+
+#### * is for model with interaction; + is for model without interaction
+
+#### method1:hist(resid(model), main = "residuals")
+
+#### method2:plot(model, 2)
+
+#### method3:Shapiro-Wilk test
+
+### iii.Equality of Variances
+
+#### plot(model, 1)
+## 5. ANOVA test
+### summary(model)
+## 6. What groups exactly are different?
+### TukeyHSD(model)
+
+
+## P1. Drug trial dataset
+## H0: There is no effect of treatment types on pain.
+## HA: At least one of those factors (placebo or drugA or drugB) influences pain.
+
+```{r}
+# 1.Independent random sampling:yes
+# 2.Normality of residuals:yes
+drugmodel = aov(pain~treatment, data = trial)
+plot(drugmodel, 2)
+# 3.Equality of Variances:yes
+plot(drugmodel, 1) #“Residuals vs Fitted” plot, looking for similar heights of “columns”
+
+#perform ANOVA
+summary(drugmodel)
+#Run a post-hoc test
+TukeyHSD(drugmodel)
+```
+
+## P2. Weight loss in mice
+## H0: There is no effect of genotypes on weight_gain.
+## HA: At least one of those genotypes (AA or AB or BB) influences weight_gain.
+
+```{r}
+#visualise
+p <- ggplot(data = mouse, aes(x = genotype, y = weight_gain, fill = diet)) 
+p + geom_boxplot()
+
+# prepare model
+mousemodel = aov(weight_gain~genotype * diet, data = mouse)
+
+#check normality of residuals:yes
+shapiro.test(resid(mousemodel))
+#check equality of Variances:yes
+plot(mousemodel, 1)
+
+#perform ANOVA
+summary(mousemodel)
+#Run a post-hoc test
+TukeyHSD(mousemodel)
+
+#A allele is related to weight gain
+```
+
+

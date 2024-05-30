@@ -1,0 +1,57 @@
+---
+title: "Correlation and Linear Regressions"
+author: "sn"
+date: "2024-05-22"
+output: pdf_document
+---
+
+## Linear Regression
+
+A simple linear regression describes the association between an independent variable and a dependent one
+
+-   How to find such "good" straight line?
+
+We estimate b0 and b1 by minimizing the sum of the squared differences between the observed and the predicted values of the outcome.
+
+-   *Goodness of Fit:* R\^2 = 1 - [sum(residuals)\^2 / sum(yo-ye)\^2]
+
+Represents the proportion of the variance of the dependent variable that it is explained by the independent variable in the regression model.
+
+-   summary(lm(y\~x))
+
+## Regression and correlation
+
+```{r setup, include=FALSE}
+WT <- read.csv('/Users/shennuo/Downloads/WT.csv')
+```
+
+## Formulating a linear model and exploring it
+
+```{r}
+model_mice <- lm(Weight~Age, data = WT)
+```
+
+## Linear regression assumptions:
+
+• Independence of observations; 
+
+• Linear relationship between variables; 
+
+• Homoscedacity of residuals; 
+
+• Normal distribution of residuals.
+
+```{r}
+plot(model_mice, 1) # To test homoscedacity
+plot(model_mice, 2) # To test the normality of residuals hist(resid(model_mice)) # To test the normality of residuals
+
+# linear model result
+summary(model_mice)
+
+# predictions
+new <- data.frame(Age = c(3, 20))
+predict.lm(object = model_mice, newdata = new)
+
+#  Test the correlation between variables
+cor.test(WT$Age, WT$Weight, method = "pearson")
+```

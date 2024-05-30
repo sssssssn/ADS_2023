@@ -1,0 +1,117 @@
+---
+title: "Power and sample size"
+author: "sn"
+date: "2024-05-22"
+output: pdf_document
+---
+
+## statistical power
+
+Statistical power is the probability that the statistical test will reject a false null hypothesis.
+
+1.  standard deviation up, power down.
+2.  effect size up, power up.
+3.  sample size up, power up.
+4.  significant level a up, power up.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Task 1. Calculate a one-sample test power with similation in R
+
+Let us assume that the heights of the adult men in a country follow a normal distribution with average 175cm and standard derivation 10cm. A college is providing a free bottle of milk per day to the students. Based on the history of a nearby country, giving a bottle of milk to the college students could improve the average height from 175cm to 178cm. Now, you go to the college and measure the heights of 10 male students, and perform a t-test to see if the students are indeed higher than the average of the country. Simulate the data you get from the students, and record the p- value in the t.test, which is the number?
+
+### 1. If you set a cutoff of 0.05, what is the percentage of simulations that you get the pvalue larger than 0.05? What does this number mean? What is the power?
+
+```{r}
+pvalue <- replicate(1000, t.test(rnorm(10, 178, 10), mu = 175, alternative = 'greater')$p.value)
+power <- length(which(pvalue <= 0.05))/1000
+```
+
+### 2. If you measure 50 students instead of 10 students, then does the power change?
+
+```{r}
+pvalue50 <- replicate(1000, t.test(rnorm(50, 178, 10), mu = 175, alternative = 'greater')$p.value)
+power50 <- length(which(pvalue50 <= 0.05))/1000
+```
+
+### 3. The cheating way is to use the command power.t.test. Try it out to calculate the power number with different Ns (5, 10, 15, 20. . . .100). Try to plot the power versus N. You should see a plot like this:
+
+```{r}
+range <- seq(0, 100, by = 20)
+values <- c()
+for (i in range) {
+  tmp = power.t.test(n = i, delta = 3, sd = 10, sig.level=0.05, type = 'one.sample', alternative = 'one.sided')$power
+  values <- c(values, tmp)
+}
+plot <- data.frame(range, values)
+plot(plot, type = 'b')
+```
+
+## Task 2. Choose the right sample size
+
+A company is developing a diet pill, which may help people lose weight. In the animal model, the drug could lead to 10% of weight loss. Now the company recruits 20 volunteers and separate them into two groups: placebo group and drug group to perform a trial. Let us assume that the weight in the normal population is 130 pound with standard derivation of 30.
+
+### 1. If the drug is indeed effective as showed on the animal model, then what is the probability that they do not see a significant effect of the drug (p-value cutoff = 0.05)? Please perform a simulation as you did before to give an answer.
+
+```{r}
+drug.p <- replicate(1000, t.test(rnorm(10, 117, 30), mu = 130, alternative = c('less'))$p.value)
+drug.power <- length(which(drug.p > 0.05))/1000
+```
+
+### Do you think the power is good enough? If the company truly believes the effect of the drug and want to be sure that they will not largely miss the effect in the trial (type II error rate \< 0.2), then how many volunteers do they need to recruit?
+
+```{r}
+power.t.test(power = 0.8, delta = 13, sd = 30, sig.level = 0.05, type = 'two.sample', alternative = "one.sided")
+```
+
+### 3. If the company changes their strategy, asking all the volunteers to take the pills and measuring their weights before and afterward, how many volunteers do they need?
+
+```{r}
+power.t.test(power = 0.8, delta = 13, sd = 30, sig.level = 0.05, type = 'paired', alternative = "one.sided")
+```
+
+### 4. Manipulate the p-value cutoff or power to see the change of the needed sample size. You could also plot them out. The output should be similar to these.
+
+```{r}
+# alpha
+alpha <- seq(0.01, 0.05, by = 0.01)
+alphalvalues <- c()
+for (i in alpha) {
+  tmp = power.t.test(power = 0.8, delta = 13, sd = 30, sig.level= i, type = 'paired', alternative = 'one.sided')$n
+  alphalvalues <- c(alphalvalues, tmp)
+}
+alphaplot <- data.frame(alpha, alphalvalues)
+plot(alphaplot, type = 'b', xlab = 'alphas', ylab = 'Ns')
+
+# power
+power <- seq(0.5, 0.9, by = 0.1)
+powervalues <- c()
+for (i in power) {
+  tmp = power.t.test(power = i, delta = 13, sd = 30, sig.level= 0.05, type = 'paired', alternative = 'one.sided')$n
+  powervalues <- c(powervalues, tmp)
+}
+powerplot <- data.frame(power, powervalues)
+plot(powerplot, type = 'b', xlab = 'pows', ylab = 'Ns2')
+```
+
+## Problem Sheet
+
+```{r}
+samplesize <- seq (2, 2000, by = 10)
+ppvalues <- c()
+for (i in samplesize) {
+  tmp <- t.test(rnorm(i, 10, 5), rnorm(i, 11, 5), alternative = 'two.side', paired = FALSE)$p.value
+  ppvalues <- c(ppvalues, tmp)
+}
+plotpp <- data.frame(samplesize, ppvalues)
+plot(plotpp)
+abline(h = 0.05, col = 'red')
+
+```
+
+
+
+
+

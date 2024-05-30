@@ -1,0 +1,160 @@
+---
+title: "test"
+author: "sn"
+date: "2024-03-25"
+output: pdf_document
+---
+```{r, echo=FALSE}
+library(ggplot2)
+library(tidyverse)
+library(maps)
+library(readr)
+world <- map_data("world")
+```
+
+## Import data
+```{r}
+data <- read.csv("substance_use.csv")
+head(data)
+```
+
+
+## In 2019, what region of the world has the highest rate of alcohol-related deaths among men aged 40-44?
+```{r}
+alcohol_death <- data[data$year == '2019' & data$cause == 'Alcohol use disorders' & data$sex == 'Male' & data$age == '40 to 44' & data$measure == 'Deaths', ]
+head(alcohol_death)
+
+highest_val <- alcohol_death[which.max(alcohol_death$val), ]
+highest_region <- highest_val$location
+print(highest_region)
+
+```
+
+## Looking at the prevalence of alcohol-related disease in the East Asia and Pacific region, how has this changed over time and in the different age groups? Is there a difference between men and women?
+
+### select the East Asia and Pacific region
+```{r}
+Asia_Pacific <- data[data$location == 'East Asia & Pacific - WB' & data$cause == 'Alcohol use disorders' & data$measure == 'Prevalence', ]
+```
+
+### how the prevalence of alcohol-related disease change over time
+```{r}
+time <- ggplot(Asia_Pacific, aes(x = year, y = val, color = age, shape = sex)) + 
+  geom_line() +
+  geom_point()
+print(time)
+```
+
+### differences between males and females
+```{r}
+
+Male <- Asia_Pacific[Asia_Pacific$sex == 'Male', ]
+Female <- Asia_Pacific[Asia_Pacific$sex == 'Female', ]
+
+shapiro.test(Male$val)
+shapiro.test(Female$val)
+wilcox.test(Male$val, Female$val, alternative = 'two.sided')
+```
+
+## Looking at the data from the United States, can you confirm an increase in the prevalence of diseases related to opioid use? What age group is the most affected?
+```{r}
+US <- data[data$location == 'North America' & data$cause == 'Opioid use disorders' & data$measure == 'Prevalence', ]
+
+opioid1 <- ggplot(US[US$sex == 'Male', ], aes(x = year, y = val, color = age)) +
+  geom_line() +
+  geom_point() +
+  ggtitle('Male')
+
+opioid2 <- ggplot(US[US$sex == 'Female', ], aes(x = year, y = val, color = age)) +
+  geom_line() +
+  geom_point() +
+  ggtitle('Female')
+
+print(opioid1 + opioid2)
+
+
+
+
+```
+
+## Ask your own question
+
+```{r}
+
+
+map_data <- select(data, location, measure, cause, year, val, age, sex) 
+
+alcohol_2019 <- map_data[map_data$measure == 'Prevalence' & map_data$cause == 'Alcohol use disorders' & map_data$year == '2019', ]
+
+
+ggplot() +
+  geom_map(data = world, map = world,
+           aes(x = long, y = lat, map_id = region),
+           fill = 'lightgrey', color = "black") +
+ 
+  theme_void()
+
+
+
+```
+
+
+
+```{r}
+South_Asia <- c('Afghanistan', 'Bangladesh', 'Bhutan', 'India', 'Maldives', 'Nepal', 'Pakistan', 'Sri Lanka')
+North_America <- c('Bermuda', 'Canada', 'USA')
+
+world <- world %>%
+  mutate(location = ifelse(region %in% South_Asia, "South Asia - WB",
+                     ifelse(region %in% North_America, "North America", "Other")))
+
+merged_data <- merge(world, alcohol_2019, by = "location", all.x = TRUE)
+mapdata <- select(merged_data, location, long, lat, measure, cause, year, sex, age, val)
+
+target <- select(mapdata[mapdata$sex == 'Male' & mapdata$age == '30 to 34', ], location, long, lat, val)
+
+ggplot() +
+  geom_map(data = target, map = target,
+           aes(x = long, y = lat, map_id = location),
+           fill = "lightgray", color = "black") +
+  geom_map(data = mapdata, map = mapdata,
+           aes(fill = color, map_id = location),
+           color = val) +
+   scale_color_gradient(low = "lightblue", high = "darkblue") 
+  theme_void()
+
+
+
+
+
+```
+
+```{r}
+library(ggplot2)
+
+# 添加一个 id 列到 target 数据框中
+target$id <- 1:nrow(target)
+
+# 绘制世界地图
+p <- ggplot() +
+  geom_map(data = world, map = world,
+           aes(x = long, y = lat, map_id = region),
+           fill = "lightgrey", color = "black") +
+  theme_void()
+
+# 在指定区域根据 val 值填充颜色
+p +
+  geom_map(data = target, map = world,
+           aes(fill = val, map_id = id),
+           color = "black") +
+  scale_fill_gradient(low = "lightblue", high = "darkblue")
+
+
+```
+
+```{r}
+
+
+
+
+```

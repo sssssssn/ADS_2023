@@ -1,0 +1,118 @@
+---
+title: "Preparing data for machine learning"
+author: "sn"
+date: "2024-04-16"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+library(readr)
+library(dplyr)
+library(nnet)
+library(tidyverse)
+mnist_raw <- read_csv("mnist_train.csv", col_names = FALSE)
+```
+
+## Reshaping the dataset
+
+```{r}
+pixels_gathered <- mnist_raw %>%
+head(1000) %>%
+rename(label = X1) %>%
+mutate(instance = row_number()) %>%
+gather(pixel, value, -label, -instance) %>%
+tidyr::extract(pixel, "pixel", "(\\d+)", convert = TRUE) %>%
+mutate(pixel = pixel - 2, x = pixel %% 28, y = 28 - pixel %/% 28)
+```
+
+## Plot the data
+
+```{r}
+ggplot(pixels_gathered,aes(x = x, y = y, fill = value)) +
+  geom_tile() +
+  facet_wrap(~label) +
+  scale_fill_gradient(low = 'purple', high = 'yellow') 
+  
+```
+## aggregate
+
+```{r}
+average_digits <- aggregate(value ~ label + x + y, data = pixels_gathered, FUN = mean)
+
+ggplot(average_digits, aes(x = x, y = y, fill = value)) +
+  geom_tile() +
+  facet_wrap(~label) +
+  scale_fill_gradient(low = "white", high = "black") + 
+  theme_minimal()  
+```
+
+# Training a supervised learning model for digit classification
+
+```{r}
+features = data.frame(label = mnist_raw$X1[1:1000])
+# set labels (of 1000 examples) as the first column in features dataframe
+
+for (i in 1:56)
+  features = cbind(features, fi = c(1:1000)*0)
+# create 56 features (28 for rows and 28 for column) for the 1000 examples
+
+for (i in 1:28)
+# loop over 28 rows and 28 columns
+  for (j in 1:1000)
+  # compute row & column means for each digit example using pixels_gathered
+{ features[j,i+1] = mean(pixels_gathered$value[pixels_gathered$instance==j & pixels_gathered$y==i]);
+  # first 28 features: row means (each row has fixed y)
+  features[j,i+29] = mean(pixels_gathered$value[pixels_gathered$instance==j & pixels_gathered$x==i-1]);
+  # next 28 features: column means (each row has fixed x)
+}
+```
+
+# Feature plot
+
+```{r}
+mean_list <- list()
+for (i in 1:9) {
+ a <- subset(features, label == i)
+ mean_list[[i]] <- as.data.frame(t(colMeans(a)))
+}
+result <- do.call(rbind, mean_list)
+
+digit1 <- subset(result, label == 1)
+plot <- gather(digit1, key = 'index', value = 'value', -label)
+ggplot(data = plot, aes(x = index, y = value)) +
+  geom_point()
+```
+
+# Normalize
+
+```{r}
+normalize_feature <- features[, -1]/255
+```
+
+# Split
+
+```{r}
+rows <- sample(1:1000, 700)
+
+train_labels <- features[rows, 1]
+valid_labels <- features[-rows, 1]
+train_data <- features[rows, -1]
+valid_data <- features[-rows, -1]
+```
+
+# Training
+
+```{r}
+train_labels_matrix = class.ind(train_labels)
+nn = nnet(train_data, train_labels_matrix, size = 12, softmax = TRUE)
+
+```
+
+```{r}
+pred_train = predict(nn, train_data, type="class")
+pred_valid = predict(nn, valid_data, type="class")
+
+mean(pred_train == train_labels)
+mean(pred_valid == valid_labels)
+
+```
