@@ -1,0 +1,65 @@
+---
+title: "Clustering and Machine Learning"
+author: "sn"
+date: "2024-05-07"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+library(ggplot2)
+library(dplyr)
+```
+
+## Creating a seating plan
+
+```{r}
+guest <- read.csv("guests.csv")
+```
+
+### Plot the data
+
+```{r}
+p <- ggplot(data = guest, aes(x = age_norm, y = hours_norm))  + 
+  geom_point() + 
+  labs(x = 'age', y = 'hours', title = 'guests') + 
+  geom_text(aes(label = names), vjust = -0.5) 
+print(p)
+```
+
+## k-means clustering
+
+### Adapting the data frame
+
+```{r}
+guest$cluster <- c(0)
+guest$diatance1 <- c(0)
+guest$diatance2 <- c(0)
+guest$diatance3 <- c(0)
+guest$diatance4 <- c(0)
+```
+
+### Assigning and storing the centroids
+
+```{r}
+centroids <- data.frame(guest[sample(nrow(guest), 4), ])
+```
+
+### Plot
+
+```{r}
+p <- p + geom_point(data=centroids, aes(x=age_norm, y=hours_norm), shape=3, size=2, colour="red")
+print(p)
+```
+
+### Compute
+
+```{r}
+kmeansobj <- kmeans(guest[, c(2,3)], centroids, iter.max = 10, nstart = 4)
+centroids <- as.data.frame(kmeansobj$centers)
+guest$cluster <- kmeansobj$cluster
+
+ggplot(guest, aes(x = age_norm, y = hours_norm, colour = as.factor(cluster))) +
+  geom_point() +
+  scale_color_manual(values = c('red', 'yellow', 'green', 'blue'))
+
+```

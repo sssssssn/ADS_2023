@@ -1,0 +1,131 @@
+---
+title: "ADS2 Practical 2.14"
+author: "sn"
+date: "2024-05-14"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+library(ggplot2)
+data <- read.delim('Reporter_assay_4-1-15.txt', sep = '\t')
+```
+
+# Does enhancer activity differ with histone modification or tran- scriptional activity?
+
+## 1. Plot the data and examine it
+
+```{r}
+summary(data)
+ggplot(data = data, aes(x = Category, y = ave)) +
+  geom_boxplot()
+```
+
+## 2. Generate the first bootstrap sample
+
+```{r}
+active <- subset(data[data$Epigenetic_status == 'Active', ])
+active_median <- median(active$ave)
+Repressed <- subset(data[data$Epigenetic_status == 'Repressed', ])
+repressed_median <- median(Repressed$ave)
+median_diff <- active_median - repressed_median
+
+b_active <- active[sample(nrow(active), replace = TRUE), ]
+b_repressed <- Repressed[sample(nrow(Repressed), replace = TRUE), ]
+b_medain_diff <- median(b_active$ave) - median(b_repressed$ave)
+```
+
+## 3. Generate a large number of bootstraps
+
+```{r}
+b_median_diff <- c()
+for (i in 1:10000) {
+  activemedian <- median(active[sample(nrow(active), replace = TRUE), ]$ave)
+  repressedmedian <- median(Repressed[sample(nrow(Repressed), replace = TRUE), ]$ave)
+  mediandiff <- activemedian - repressedmedian
+  b_median_diff <- c(b_median_diff, mediandiff)
+}
+hist(b_median_diff, breaks = 50)
+```
+## 4. Make a statistical inference
+
+```{r}
+percentile <- mean(b_median_diff <= b_medain_diff) * 100
+
+p_value <- 2 * min(
+  mean(b_median_diff >= b_medain_diff),
+  mean(b_median_diff <= b_medain_diff)
+)
+
+print(paste("p-value:", p_value))
+
+```
+\newpage
+
+# Which movie genres are most popular with Chinese university students?
+
+## 1. plot the data and examine it first
+
+```{r}
+movie <- read.delim("movie_data.txt", sep = '\t')
+ggplot(data = movie, aes(x = genre,y = students)) +
+  geom_bar(stat = "identity")
+```
+
+## 2. Generate a first bootstrap sample
+
+```{r}
+bootstrap_vector <- c(rep("comedy", 73), rep("action", 42), rep("romance", 38), rep("fantasy", 28),
+                      rep("science-fiction", 22), rep("horror", 19), rep("crime", 18))
+bootstrap_vector <- sample(bootstrap_vector)
+```
+
+## 3. Generate a confidence interval by bootstrapping many times
+
+```{r}
+a <- c()
+for (i in 1:1000) {
+  sampleing <- sample(bootstrap_vector, 73, replace = TRUE)
+  sum <- sum(sampleing == "comedy")
+  a <- c(a, sum)
+}
+hist(a, breaks = 30)
+confidence_interval <- quantile(a,  c(0.025, 0.975))
+```
+
+## 4. Repeat this bootstrapping for the entire dataset
+
+```{r}
+b <- c()
+for (i in 1:1000) {
+  sampleb <- sample(bootstrap_vector, 42, replace = TRUE)
+  sumb <- sum(sampleb == "action")
+  b <- c(b, sumb)
+}
+confidence_intervalb <- quantile(b,  c(0.025, 0.975))
+
+c <- c()
+for (i in 1:1000) {
+  samplec <- sample(bootstrap_vector, 38, replace = TRUE)
+  sumc <- sum(samplec == "romance")
+  c <- c(c, sumc)
+}
+confidence_intervalc <- quantile(c,  c(0.025, 0.975))
+```
+
+## 5. Explore the differences across genres, are there any differences that you can detect?
+
+```{r}
+all <- data.frame(
+  group = c("comedy", "action", "romance"),
+  mean = c(mean(a), mean(b), mean(c)),
+  lower = c(min(confidence_interval), min(confidence_intervalb), min(confidence_intervalc)),
+  upper = c(max(confidence_interval), max(confidence_intervalb), max(confidence_intervalc))
+)
+
+ggplot(data = all, aes(x = group, y = mean)) +
+  geom_bar(stat = "identity") + 
+  geom_errorbar(aes(ymin = lower, ymax = upper), width = 0.2)
+
+
+
+```
